@@ -48,9 +48,9 @@ As you go with caucho resin server before
 [22:12:17.710] {main} OpenJDK Runtime Environment 11.0.13+8, UTF-8, en
 [22:12:17.710] {main} OpenJDK 64-Bit Server VM 11.0.13+8, 64, mixed mode, Eclipse Adoptium
 [22:12:17.710] {main} user.name: Philip
-[22:12:17.711] {main} resin.home = /opt/resin-3.1.12/
-[22:12:17.711] {main} resin.root = /opt/resin-3.1.12/
-[22:12:17.711] {main} resin.conf = /opt/resin-3.1.12/conf/resin.conf
+[22:12:17.711] {main} resin.home = /opt/resin-3.1.16/
+[22:12:17.711] {main} resin.root = /opt/resin-3.1.16/
+[22:12:17.711] {main} resin.conf = /opt/resin-3.1.16/conf/resin.conf
 [22:12:17.711] {main} 
 [22:12:17.871] {main} WebApp[http://localhost:8080] active
 [22:12:17.940] {main} WebApp[http://localhost:8080/resin-admin] active
