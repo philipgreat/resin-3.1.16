@@ -2,6 +2,10 @@
 
 # resin-3.1.16
 A GPL license Resin-3.1.16 version works with JDK9+
+## Goal
+
+* Works with new JDK version JDK9,JDK11, JDK16, JDK 17 Tested
+* Keep stupied and simple
 
 ## Intension
 Caucho has Resin-4.0.X
