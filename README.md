@@ -8,6 +8,11 @@ A GPL license Resin-3.1.16 version works with JDK9+
 * Keep stupied and simple
 
 
+## Fixed Issues
+
+* '18' is an unknown constant pool type.
+* Unrecognized option: -d64
+
 ## Intension
 Caucho has Resin-4.0.X
 
