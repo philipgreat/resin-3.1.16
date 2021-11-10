@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998-2008 Caucho Technology -- all rights reserved
+ * Copyright (c) 1998-2018 Caucho Technology -- all rights reserved
  *
  * This file is part of Resin(R) Open Source
  *
@@ -29,20 +29,17 @@
 
 package com.caucho.bytecode;
 
-import com.caucho.log.Log;
 import com.caucho.util.CharBuffer;
 import com.caucho.util.L10N;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 /**
  * Interface to the bytecode parser.
  */
 public class ByteCodeParser {
-  private static final Logger log = Log.open(ByteCode.class);
   private static final L10N L = new L10N(ByteCode.class);
 
   static final int CP_CLASS = 7;
@@ -56,6 +53,10 @@ public class ByteCodeParser {
   static final int CP_DOUBLE = 6;
   static final int CP_NAME_AND_TYPE = 12;
   static final int CP_UTF8 = 1;
+  
+  static final int CP_METHOD_HANDLE = 15;
+  static final int CP_METHOD_TYPE = 16;
+  static final int CP_INVOKE_DYNAMIC = 18;
 
   private JavaClassLoader _loader;
   private InputStream _is;
@@ -182,9 +183,9 @@ public class ByteCodeParser {
       _cp.addConstant(entry);
       
       if (entry instanceof DoubleConstant ||
-	  entry instanceof LongConstant) {
-	i++;
-	_cp.addConstant(null);
+          entry instanceof LongConstant) {
+        i++;
+        _cp.addConstant(null);
       }
     }
   }
@@ -230,10 +231,19 @@ public class ByteCodeParser {
       
     case CP_UTF8:
       return parseUtf8Constant(index);
+      
+    case CP_METHOD_HANDLE:
+      return parseMethodHandleConstant(index);
+      
+    case CP_METHOD_TYPE:
+      return parseMethodTypeConstant(index);
+      
+    case CP_INVOKE_DYNAMIC:
+      return parseInvokeDynamicConstant(index);
 
     default:
       throw error(L.l("'{0}' is an unknown constant pool type.",
-		      tag));
+                      tag));
     }
   }
 
@@ -258,7 +268,7 @@ public class ByteCodeParser {
     int nameAndTypeIndex = readShort();
 
     return new FieldRefConstant(_class.getConstantPool(), index,
-				classIndex, nameAndTypeIndex);
+                                classIndex, nameAndTypeIndex);
   }
 
   /**
@@ -271,7 +281,7 @@ public class ByteCodeParser {
     int nameAndTypeIndex = readShort();
 
     return new MethodRefConstant(_class.getConstantPool(), index,
-				 classIndex, nameAndTypeIndex);
+                                 classIndex, nameAndTypeIndex);
   }
 
   /**
@@ -284,7 +294,45 @@ public class ByteCodeParser {
     int nameAndTypeIndex = readShort();
 
     return new InterfaceMethodRefConstant(_class.getConstantPool(), index,
-					  classIndex, nameAndTypeIndex);
+                                          classIndex, nameAndTypeIndex);
+  }
+
+  /**
+   * Parses an invoke-dynamic constant pool entry.
+   */
+  private InvokeDynamicConstant parseInvokeDynamicConstant(int index)
+    throws IOException
+  {
+    int bootStrapMethod = readShort();
+    int nameAndTypeIndex = readShort();
+
+    return new InvokeDynamicConstant(_class.getConstantPool(), index,
+                                     bootStrapMethod, nameAndTypeIndex);
+  }
+
+  /**
+   * Parses an method-handle dynamic constant pool entry.
+   */
+  private MethodHandleConstant parseMethodHandleConstant(int index)
+    throws IOException
+  {
+    int referenceKind = read();
+    int referenceIndex = readShort();
+
+    return new MethodHandleConstant(_class.getConstantPool(), index,
+                                    referenceKind, referenceIndex);
+  }
+
+  /**
+   * Parses an method-type dynamic constant pool entry.
+   */
+  private MethodTypeConstant parseMethodTypeConstant(int index)
+    throws IOException
+  {
+    int descriptorIndex = readShort();
+
+    return new MethodTypeConstant(_class.getConstantPool(), index,
+                                    descriptorIndex);
   }
 
   /**
@@ -356,7 +404,7 @@ public class ByteCodeParser {
     int descriptorIndex = readShort();
 
     return new NameAndTypeConstant(_class.getConstantPool(), index,
-				   nameIndex, descriptorIndex);
+                                   nameIndex, descriptorIndex);
   }
 
   /**
@@ -373,23 +421,23 @@ public class ByteCodeParser {
       int ch = read();
 
       if (ch < 0x80) {
-	cb.append((char) ch);
+        cb.append((char) ch);
       }
       else if ((ch & 0xe0) == 0xc0) {
-	int ch2 = read();
-	i++;
+        int ch2 = read();
+        i++;
 
-	cb.append((char) (((ch & 0x1f) << 6)+
-			  (ch2 & 0x3f)));
+        cb.append((char) (((ch & 0x1f) << 6)+
+                          (ch2 & 0x3f)));
       }
       else {
-	int ch2 = read();
-	int ch3 = read();
-	i += 2;
+        int ch2 = read();
+        int ch3 = read();
+        i += 2;
       
-	cb.append((char) (((ch & 0xf) << 12)+
-			  ((ch2 & 0x3f) << 6) +
-			  ((ch3 & 0x3f))));
+        cb.append((char) (((ch & 0xf) << 12)+
+                          ((ch2 & 0x3f) << 6) +
+                          ((ch3 & 0x3f))));
       }
     }
 
@@ -447,21 +495,21 @@ public class ByteCodeParser {
       method.addAttribute(attr);
       
       if (attr instanceof ExceptionsAttribute) {
-	ExceptionsAttribute exn = (ExceptionsAttribute) attr;
+        ExceptionsAttribute exn = (ExceptionsAttribute) attr;
 
-	ArrayList<String> exnNames = exn.getExceptionList();
+        ArrayList<String> exnNames = exn.getExceptionList();
 
-	if (exnNames.size() > 0) {
-	  JClass []exnClasses = new JClass[exnNames.size()];
+        if (exnNames.size() > 0) {
+          JClass []exnClasses = new JClass[exnNames.size()];
 
-	  for (int j = 0; j < exnNames.size(); j++) {
-	    String exnName = exnNames.get(j).replace('/', '.');
-	  
-	    exnClasses[j] = _loader.forName(exnName);
-	  }
+          for (int j = 0; j < exnNames.size(); j++) {
+            String exnName = exnNames.get(j).replace('/', '.');
 
-	  method.setExceptionTypes(exnClasses);
-	}
+            exnClasses[j] = _loader.forName(exnName);
+          }
+
+          method.setExceptionTypes(exnClasses);
+        }
       }
     }
 
@@ -514,13 +562,13 @@ public class ByteCodeParser {
     throws IOException
   {
     return (((long) _is.read() << 56) |
-	    ((long) _is.read() << 48) |
-	    ((long) _is.read() << 40) |
-	    ((long) _is.read() << 32) |
-	    ((long) _is.read() << 24) |
-	    ((long) _is.read() << 16) |
-	    ((long) _is.read() << 8) |
-	    ((long) _is.read()));
+            ((long) _is.read() << 48) |
+            ((long) _is.read() << 40) |
+            ((long) _is.read() << 32) |
+            ((long) _is.read() << 24) |
+            ((long) _is.read() << 16) |
+            ((long) _is.read() << 8) |
+            ((long) _is.read()));
   }
 
   /**
@@ -530,9 +578,9 @@ public class ByteCodeParser {
     throws IOException
   {
     return ((_is.read() << 24) |
-	    (_is.read() << 16) |
-	    (_is.read() << 8) |
-	    (_is.read()));
+            (_is.read() << 16) |
+            (_is.read() << 8) |
+            (_is.read()));
   }
 
   /**
@@ -568,7 +616,7 @@ public class ByteCodeParser {
       int sublen = _is.read(buffer, offset, length);
 
       if (sublen < 0)
-	return readLength == 0 ? -1 : readLength;
+        return readLength == 0 ? -1 : readLength;
 
       offset += sublen;
       length -= sublen;
@@ -586,3 +634,5 @@ public class ByteCodeParser {
     return new IOException(message);
   }
 }
+
+
