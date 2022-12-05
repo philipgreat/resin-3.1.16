@@ -7,6 +7,13 @@ A GPL license Resin-3.1.16 version works with JDK9+
 * Works with new JDK version JDK9,JDK11, JDK16, JDK 17 Tested
 * Keep stupied and simple
 
+## Fix Corba Class Missing
+```
+cd resin-3.1.16/lib
+wget http://www.java2s.com/Code/JarDownload/corba/corba-api-5.0.1.jar.zip
+unzip corba-api-5.0.1.jar.zip 
+```
+
 
 ## Fixed Issues
 
